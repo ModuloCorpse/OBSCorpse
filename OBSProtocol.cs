@@ -96,9 +96,9 @@ namespace OBSCorpse
             return request.GetResponse();
         }
 
-        private static void AwaitRequest(OBSIRequest request)
+        private void AwaitRequest(OBSIRequest request)
         {
-            while (!request.HaveResponse)
+            while (!request.HaveResponse && IsConnected())
                 Thread.Sleep(10);
         }
 

@@ -37,7 +37,7 @@ namespace OBSCorpse
         private readonly JObject? m_Data;
         private readonly string m_Type;
 
-        public Response GetResponse() => m_Response!;
+        public Response GetResponse() => m_Response ?? new();
 
         public OBSRequest(string type, JObject? data = null)
         {
