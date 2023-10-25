@@ -27,10 +27,11 @@ namespace OBSCorpse
 
         protected override void OnActionUpdate(long elapsed)
         {
-            TimeSpan remainingTime = TimeSpan.FromMilliseconds((Duration + 1) - elapsed);
+            TimeSpan remainingTime = TimeSpan.FromMilliseconds((Duration + 1000) - elapsed);
             string remainingStr = string.Format("{0:D2}:{1:D2}", remainingTime.Minutes, remainingTime.Seconds);
             if (!string.IsNullOrEmpty(m_FilePath))
                 File.WriteAllText(m_FilePath, remainingStr);
+            base.OnActionUpdate(elapsed);
         }
 
         protected override void OnActionFinish()
