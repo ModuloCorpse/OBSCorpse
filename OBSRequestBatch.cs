@@ -4,7 +4,7 @@ namespace OBSCorpse
 {
     public class OBSRequestBatch : OBSIRequest
     {
-        private readonly List<OBSRequest> m_Requests = new();
+        private readonly List<OBSRequest> m_Requests = [];
         private readonly RequestBatchExecutionType m_ExecutionType = RequestBatchExecutionType.SerialRealtime;
         private readonly bool m_HaltOnFailure = false;
 
@@ -32,7 +32,7 @@ namespace OBSCorpse
 
         protected override void FillJson(ref JObject request)
         {
-            JArray requests = new();
+            JArray requests = [];
             foreach (OBSRequest requestToAdd in m_Requests)
                 requests.Add(requestToAdd.ToJson());
             request.Add("haltOnFailure", m_HaltOnFailure);

@@ -2,18 +2,11 @@
 
 namespace OBSCorpse
 {
-    public class OBSProfileList
+    public class OBSProfileList(string currentProfile, List<string> profilesList)
     {
-        private readonly string m_CurrentProfile;
-        private readonly List<string> m_ProfilesList;
-
+        private readonly string m_CurrentProfile = currentProfile;
+        private readonly List<string> m_ProfilesList = profilesList;
         public string CurrentProfile => m_CurrentProfile;
         public ReadOnlyCollection<string> ProfilesList => m_ProfilesList.AsReadOnly();
-
-        public OBSProfileList(string currentProfile, List<string> profilesList)
-        {
-            m_CurrentProfile = currentProfile;
-            m_ProfilesList = profilesList;
-        }
     }
 }

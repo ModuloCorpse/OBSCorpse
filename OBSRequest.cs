@@ -2,7 +2,7 @@
 
 namespace OBSCorpse
 {
-    public class OBSRequest : OBSIRequest
+    public class OBSRequest(string type, JObject? data = null) : OBSIRequest
     {
         public class Response
         {
@@ -34,16 +34,10 @@ namespace OBSCorpse
         }
 
         private Response? m_Response = null;
-        private readonly JObject? m_Data;
-        private readonly string m_Type;
+        private readonly JObject? m_Data = data;
+        private readonly string m_Type = type;
 
         public Response GetResponse() => m_Response ?? new();
-
-        public OBSRequest(string type, JObject? data = null)
-        {
-            m_Data = data;
-            m_Type = type;
-        }
 
         public void SetResponse()
         {

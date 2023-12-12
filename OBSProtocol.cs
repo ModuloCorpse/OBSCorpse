@@ -32,8 +32,8 @@ namespace OBSCorpse
         public event EventHandler<string>? OnSceneChanged;
         public event EventHandler<Tuple<bool, string>>? OnStreamStatusChanged;
 
-        private readonly Dictionary<string, FileCountdownTimeAction> m_Timers = new();
-        private readonly Dictionary<string, OBSIRequest> m_PendingRequests = new();
+        private readonly Dictionary<string, FileCountdownTimeAction> m_Timers = [];
+        private readonly Dictionary<string, OBSIRequest> m_PendingRequests = [];
         private readonly object m_Lock = new();
         private readonly string m_Password;
         private bool m_Identified = false;
@@ -113,8 +113,8 @@ namespace OBSCorpse
                     authentication!.TryGet("challenge", out string? challenge) &&
                     authentication!.TryGet("salt", out string? salt))
                 {
-                    string base64_secret = Convert.ToBase64String(System.Security.Cryptography.SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(m_Password + salt)));
-                    string auth = Convert.ToBase64String(System.Security.Cryptography.SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(base64_secret + challenge)));
+                    string base64_secret = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(m_Password + salt)));
+                    string auth = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(base64_secret + challenge)));
                     response.Add("authentification", auth);
                 }
                 SendMessage(WebSocketOpCode.Identify, response);
@@ -193,7 +193,7 @@ namespace OBSCorpse
         public OBSSceneCollectionList GetSceneCollectionList()
         {
             string currentSceneCollection = string.Empty;
-            List<string> sceneCollectionList = new();
+            List<string> sceneCollectionList = [];
             OBSRequest.Response response = SendAndAwaitRequest("GetSceneCollectionList", null);
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("currentSceneCollectionName", out string? currentSceneCollectionName) &&
@@ -209,7 +209,7 @@ namespace OBSCorpse
         public OBSProfileList GetProfileList()
         {
             string currentProfile = string.Empty;
-            List<string> profilesList = new();
+            List<string> profilesList = [];
             OBSRequest.Response response = SendAndAwaitRequest("GetProfileList", null);
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("currentProfileName", out string? currentProfileName) &&
@@ -252,7 +252,7 @@ namespace OBSCorpse
         {
             string currentProgramScene = string.Empty;
             string currentPreviewScene = string.Empty;
-            List<OBSScene> scenesList = new();
+            List<OBSScene> scenesList = [];
             OBSRequest.Response response = SendAndAwaitRequest("GetSceneList", null);
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("currentProgramSceneName", out string? currentProgramSceneName) &&
@@ -271,7 +271,7 @@ namespace OBSCorpse
         }
         public List<string> GetGroupList()
         {
-            List<string> groupsList = new();
+            List<string> groupsList = [];
             OBSRequest.Response response = SendAndAwaitRequest("GetGroupList", null);
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("groups", out List<string>? groups))
