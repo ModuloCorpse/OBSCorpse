@@ -10,11 +10,11 @@ namespace OBSCorpse
 
         public void AddRequest(OBSRequest request) => m_Requests.Add(request);
 
-        protected override void SetResponse(JObject response)
+        protected override void SetResponse(JsonObject response)
         {
-            if (response.TryGet("results", out List<JObject>? tmp))
+            if (response.TryGet("results", out List<JsonObject>? tmp))
             {
-                List<JObject> results = tmp!;
+                List<JsonObject> results = tmp!;
                 int i = 0;
                 foreach (OBSRequest request in m_Requests)
                 {
@@ -30,9 +30,9 @@ namespace OBSCorpse
             }
         }
 
-        protected override void FillJson(ref JObject request)
+        protected override void FillJson(ref JsonObject request)
         {
-            JArray requests = [];
+            JsonArray requests = [];
             foreach (OBSRequest requestToAdd in m_Requests)
                 requests.Add(requestToAdd.ToJson());
             request.Add("haltOnFailure", m_HaltOnFailure);

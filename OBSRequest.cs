@@ -2,16 +2,16 @@
 
 namespace OBSCorpse
 {
-    public class OBSRequest(string type, JObject? data = null) : OBSIRequest
+    public class OBSRequest(string type, JsonObject? data = null) : OBSIRequest
     {
         public class Response
         {
-            private readonly JObject? m_Data;
+            private readonly JsonObject? m_Data;
             private readonly string m_Comment = string.Empty;
             private readonly RequestStatus m_Code;
             private readonly bool m_Result;
 
-            public JObject? Data => m_Data;
+            public JsonObject? Data => m_Data;
             public string Comment => m_Comment;
             public RequestStatus Code => m_Code;
             public bool Result => m_Result;
@@ -24,7 +24,7 @@ namespace OBSCorpse
                 m_Comment = string.Empty;
             }
 
-            public Response(JObject status, JObject? data)
+            public Response(JsonObject status, JsonObject? data)
             {
                 m_Data = data;
                 m_Result = status.GetOrDefault("result", false);
@@ -34,7 +34,7 @@ namespace OBSCorpse
         }
 
         private Response? m_Response = null;
-        private readonly JObject? m_Data = data;
+        private readonly JsonObject? m_Data = data;
         private readonly string m_Type = type;
 
         public Response GetResponse() => m_Response ?? new();
@@ -45,17 +45,17 @@ namespace OBSCorpse
             MarkAsResponded();
         }
 
-        protected override void SetResponse(JObject response)
+        protected override void SetResponse(JsonObject response)
         {
             if (response.TryGet("requestType", out string? type) && m_Type == type &&
-                response.TryGet("requestStatus", out JObject? status))
+                response.TryGet("requestStatus", out JsonObject? status))
             {
-                m_Response = new(status!, response.GetOrDefault<JObject?>("responseData", null));
+                m_Response = new(status!, response.GetOrDefault<JsonObject?>("responseData", null));
                 MarkAsResponded();
             }
         }
 
-        protected override void FillJson(ref JObject request)
+        protected override void FillJson(ref JsonObject request)
         {
             request.Add("requestType", m_Type);
             if (m_Data != null)

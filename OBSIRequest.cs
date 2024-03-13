@@ -12,20 +12,20 @@ namespace OBSCorpse
 
         protected void MarkAsResponded() => m_HaveResponse = true;
 
-        public JObject ToJson()
+        public JsonObject ToJson()
         {
-            JObject request = new() { { "requestId", ID } };
+            JsonObject request = new() { { "requestId", ID } };
             FillJson(ref request);
             return request;
         }
 
-        public void ReceivedResponse(JObject response)
+        public void ReceivedResponse(JsonObject response)
         {
             if (response.TryGet("requestId", out string? id) && ID == id)
                 SetResponse(response);
         }
 
-        protected abstract void SetResponse(JObject response);
-        protected abstract void FillJson(ref JObject json);
+        protected abstract void SetResponse(JsonObject response);
+        protected abstract void FillJson(ref JsonObject json);
     }
 }

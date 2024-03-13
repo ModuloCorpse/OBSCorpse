@@ -46,20 +46,20 @@ namespace OBSCorpse
         {
             try
             {
-                JFile messageJson = new(message);
-                if (messageJson.TryGet("op", out WebSocketOpCode? op) && messageJson.TryGet("d", out JObject? data))
+                JsonObject messageJson = JsonParser.Parse(message);
+                if (messageJson.TryGet("op", out WebSocketOpCode? op) && messageJson.TryGet("d", out JsonObject? data))
                     HandleOBSMessage((WebSocketOpCode)op!, data!);
             }
             catch (Exception ex) { Console.WriteLine(ex.ToString()); }
         }
 
-        private void SendMessage(WebSocketOpCode opCode, JObject data)
+        private void SendMessage(WebSocketOpCode opCode, JsonObject data)
         {
-            JObject obj = new() { { "op", opCode }, { "d", data } };
+            JsonObject obj = new() { { "op", opCode }, { "d", data } };
             Send(obj.ToNetworkString());
         }
 
-        private void SetRequestResponse(JObject requestResponse)
+        private void SetRequestResponse(JsonObject requestResponse)
         {
             OBSIRequest? request = null;
             if (requestResponse.TryGet("requestId", out string? id))
@@ -82,14 +82,14 @@ namespace OBSCorpse
             SendMessage(WebSocketOpCode.Request, request.ToJson());
         }
 
-        private OBSRequest SendRequest(string type, JObject? data)
+        private OBSRequest SendRequest(string type, JsonObject? data)
         {
             OBSRequest request = new(type, data);
             SendRequest(request);
             return request;
         }
 
-        private OBSRequest.Response SendAndAwaitRequest(string type, JObject? data)
+        private OBSRequest.Response SendAndAwaitRequest(string type, JsonObject? data)
         {
             OBSRequest request = SendRequest(type, data);
             AwaitRequest(request);
@@ -102,14 +102,14 @@ namespace OBSCorpse
                 Thread.Sleep(10);
         }
 
-        private void HandleHello(JObject data)
+        private void HandleHello(JsonObject data)
         {
             if (data.TryGet("rpcVersion", out int? rpc) &&
                 data.TryGet("obsWebSocketVersion", out string? websocketVersion) &&
                 new Version(websocketVersion!) >= MINIMUM_REQUIRED)
             {
-                JObject response = new() { { "rpcVersion", rpc! } };
-                if (data.TryGet("authentication", out JObject? authentication) &&
+                JsonObject response = new() { { "rpcVersion", rpc! } };
+                if (data.TryGet("authentication", out JsonObject? authentication) &&
                     authentication!.TryGet("challenge", out string? challenge) &&
                     authentication!.TryGet("salt", out string? salt))
                 {
@@ -121,23 +121,23 @@ namespace OBSCorpse
             }
         }
 
-        private void HandleSceneChange(JObject data)
+        private void HandleSceneChange(JsonObject data)
         {
             if (data.TryGet("sceneName", out string? sceneName))
                 OnSceneChanged?.Invoke(this, sceneName!);
         }
 
-        private void HandleStreamStateChanged(JObject data)
+        private void HandleStreamStateChanged(JsonObject data)
         {
             if (data.TryGet("outputActive", out bool? outputActive) && data.TryGet("outputState", out string? outputState))
                 OnStreamStatusChanged?.Invoke(this, new((bool)outputActive!, outputState!));
         }
 
-        private void HandleEvent(JObject data)
+        private void HandleEvent(JsonObject data)
         {
             if (data.TryGet("eventType", out string? eventType))
             {
-                JObject eventData = data.GetOrDefault("eventData", new JObject())!;
+                JsonObject eventData = data.GetOrDefault("eventData", new JsonObject())!;
                 switch (eventType)
                 {
                     case "CurrentProgramSceneChanged": HandleSceneChange(eventData); break;
@@ -146,7 +146,7 @@ namespace OBSCorpse
             }
         }
 
-        private void HandleOBSMessage(WebSocketOpCode op, JObject data)
+        private void HandleOBSMessage(WebSocketOpCode op, JsonObject data)
         {
             switch (op)
             {
@@ -204,8 +204,8 @@ namespace OBSCorpse
             }
             return new(currentSceneCollection, sceneCollectionList);
         }
-        public bool SetCurrentSceneCollection(string sceneCollectionName) => SendAndAwaitRequest("SetCurrentSceneCollection", new JObject() { { "sceneCollectionName", sceneCollectionName } }).Result;
-        public bool CreateSceneCollection(string sceneCollectionName) => SendAndAwaitRequest("CreateSceneCollection", new JObject() { { "sceneCollectionName", sceneCollectionName } }).Result;
+        public bool SetCurrentSceneCollection(string sceneCollectionName) => SendAndAwaitRequest("SetCurrentSceneCollection", new JsonObject() { { "sceneCollectionName", sceneCollectionName } }).Result;
+        public bool CreateSceneCollection(string sceneCollectionName) => SendAndAwaitRequest("CreateSceneCollection", new JsonObject() { { "sceneCollectionName", sceneCollectionName } }).Result;
         public OBSProfileList GetProfileList()
         {
             string currentProfile = string.Empty;
@@ -220,9 +220,9 @@ namespace OBSCorpse
             }
             return new(currentProfile, profilesList);
         }
-        public bool SetCurrentProfile(string profileName) => SendAndAwaitRequest("SetCurrentProfile", new JObject() { { "profileName", profileName } }).Result;
-        public bool CreateProfile(string profileName) => SendAndAwaitRequest("CreateProfile", new JObject() { { "profileName", profileName   } }).Result;
-        public bool RemoveProfile(string profileName) => SendAndAwaitRequest("RemoveProfile", new JObject() { { "profileName", profileName } }).Result;
+        public bool SetCurrentProfile(string profileName) => SendAndAwaitRequest("SetCurrentProfile", new JsonObject() { { "profileName", profileName } }).Result;
+        public bool CreateProfile(string profileName) => SendAndAwaitRequest("CreateProfile", new JsonObject() { { "profileName", profileName   } }).Result;
+        public bool RemoveProfile(string profileName) => SendAndAwaitRequest("RemoveProfile", new JsonObject() { { "profileName", profileName } }).Result;
         /*
             GetProfileParameter
             SetProfileParameter
@@ -257,11 +257,11 @@ namespace OBSCorpse
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("currentProgramSceneName", out string? currentProgramSceneName) &&
                 response.Data.TryGet("currentPreviewSceneName", out string? currentPreviewSceneName) &&
-                response.Data.TryGet("scenes", out List<JObject>? scenes))
+                response.Data.TryGet("scenes", out List<JsonObject>? scenes))
             {
                 currentProgramScene = currentProgramSceneName!;
                 currentPreviewScene = currentPreviewSceneName ?? string.Empty;
-                foreach (JObject sceneObj in scenes!)
+                foreach (JsonObject sceneObj in scenes!)
                 {
                     if (sceneObj.TryGet("sceneName", out string? sceneName) && sceneObj.TryGet("sceneIndex", out int? sceneIndex))
                         scenesList.Add(new(sceneName!, (int)sceneIndex!));
@@ -286,7 +286,7 @@ namespace OBSCorpse
                 return currentProgramSceneName!;
             return string.Empty;
         }
-        public bool SetCurrentProgramScene(string sceneName) => SendAndAwaitRequest("SetCurrentProgramScene", new JObject() { { "sceneName", sceneName } }).Result;
+        public bool SetCurrentProgramScene(string sceneName) => SendAndAwaitRequest("SetCurrentProgramScene", new JsonObject() { { "sceneName", sceneName } }).Result;
         public string GetCurrentPreviewScene()
         {
             OBSRequest.Response response = SendAndAwaitRequest("GetCurrentPreviewScene", null);
@@ -295,10 +295,10 @@ namespace OBSCorpse
                 return currentPreviewSceneName!;
             return string.Empty;
         }
-        public bool SetCurrentPreviewScene(string sceneName) => SendAndAwaitRequest("SetCurrentPreviewScene", new JObject() { { "sceneName", sceneName } }).Result;
-        public bool CreateScene(string sceneName) => SendAndAwaitRequest("CreateScene", new JObject() { { "sceneName", sceneName } }).Result;
-        public bool RemoveScene(string sceneName) => SendAndAwaitRequest("RemoveScene", new JObject() { { "sceneName", sceneName } }).Result;
-        public bool SetSceneName(string sceneName, string newSceneName) => SendAndAwaitRequest("SetSceneName", new JObject() { { "sceneName", sceneName }, { "newSceneName", newSceneName } }).Result;
+        public bool SetCurrentPreviewScene(string sceneName) => SendAndAwaitRequest("SetCurrentPreviewScene", new JsonObject() { { "sceneName", sceneName } }).Result;
+        public bool CreateScene(string sceneName) => SendAndAwaitRequest("CreateScene", new JsonObject() { { "sceneName", sceneName } }).Result;
+        public bool RemoveScene(string sceneName) => SendAndAwaitRequest("RemoveScene", new JsonObject() { { "sceneName", sceneName } }).Result;
+        public bool SetSceneName(string sceneName, string newSceneName) => SendAndAwaitRequest("SetSceneName", new JsonObject() { { "sceneName", sceneName }, { "newSceneName", newSceneName } }).Result;
         /*
             GetSceneSceneTransitionOverride
             SetSceneSceneTransitionOverride
@@ -434,7 +434,7 @@ namespace OBSCorpse
         }
         public bool StartStream() => SendAndAwaitRequest("StartStream", null).Result;
         public bool StopStream() => SendAndAwaitRequest("StopStream", null).Result;
-        public bool SendStreamCaption(string captionText) => SendAndAwaitRequest("SendStreamCaption", new JObject() { { "captionText", captionText } }).Result;
+        public bool SendStreamCaption(string captionText) => SendAndAwaitRequest("SendStreamCaption", new JsonObject() { { "captionText", captionText } }).Result;
 
         //====================RECORD====================\\
         public OBSRecordStatus? GetRecordStatus()
