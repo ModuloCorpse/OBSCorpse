@@ -1,8 +1,9 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib;
+using CorpseLib.Json;
 
 namespace OBSCorpse
 {
-    public class OBSRequest(string type, JsonObject? data = null) : OBSIRequest
+    public abstract class AOBSRequest(string type, JsonObject? data = null) : IOBSRequest
     {
         public class Response
         {
@@ -33,33 +34,48 @@ namespace OBSCorpse
             }
         }
 
-        private Response? m_Response = null;
-        private readonly JsonObject? m_Data = data;
-        private readonly string m_Type = type;
-
-        public Response GetResponse() => m_Response ?? new();
-
-        public void SetResponse()
+        public class JsonSerializer : AJsonSerializer<AOBSRequest>
         {
-            m_Response = new();
-            MarkAsResponded();
+            protected override OperationResult<AOBSRequest> Deserialize(JsonObject reader) => new("No deserialization for AOBSRequest", string.Empty);
+
+            protected override void Serialize(AOBSRequest obj, JsonObject writer)
+            {
+                writer["requestId"] = obj.m_ID;
+                writer["requestType"] = obj.m_Type;
+                if (obj.m_Data != null)
+                    writer["requestData"] = obj.m_Data;
+            }
         }
 
-        protected override void SetResponse(JsonObject response)
+        private Response? m_Response = null;
+        private readonly JsonObject? m_Data = data;
+        private readonly Guid m_ID = Guid.NewGuid();
+        private readonly string m_Type = type;
+        private volatile bool m_HasResult = false;
+
+        public string ID => m_ID.ToString();
+        public bool HasResult => m_HasResult;
+
+        public void ReceivedResponse(JsonObject response)
         {
             if (response.TryGet("requestType", out string? type) && m_Type == type &&
                 response.TryGet("requestStatus", out JsonObject? status))
             {
                 m_Response = new(status!, response.GetOrDefault<JsonObject?>("responseData", null));
-                MarkAsResponded();
+                OnResponse(m_Response);
+                m_HasResult = true;
             }
         }
 
-        protected override void FillJson(ref JsonObject request)
-        {
-            request.Add("requestType", m_Type);
-            if (m_Data != null)
-                request.Add("requestData", m_Data);
-        }
+        public Response GetResponse() => m_Response ?? new();
+
+        public void SetResponse() => m_Response = new();
+
+        protected abstract void OnResponse(Response response);
+    }
+
+    public class OBSRequest(string type, JsonObject? data = null) : AOBSRequest(type, data)
+    {
+        protected override void OnResponse(Response response) { }
     }
 }

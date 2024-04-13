@@ -1,43 +1,50 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib;
+using CorpseLib.Json;
 
 namespace OBSCorpse
 {
-    public class OBSRequestBatch : OBSIRequest
+    public class OBSRequestBatch : IOBSRequest
     {
-        private readonly List<OBSRequest> m_Requests = [];
-        private readonly RequestBatchExecutionType m_ExecutionType = RequestBatchExecutionType.SerialRealtime;
-        private readonly bool m_HaltOnFailure = false;
-
-        public void AddRequest(OBSRequest request) => m_Requests.Add(request);
-
-        protected override void SetResponse(JsonObject response)
+        public class JsonSerializer : AJsonSerializer<OBSRequestBatch>
         {
-            if (response.TryGet("results", out List<JsonObject>? tmp))
+            protected override OperationResult<OBSRequestBatch> Deserialize(JsonObject reader) => new("No deserialization for OBSRequestBatch", string.Empty);
+
+            protected override void Serialize(OBSRequestBatch obj, JsonObject writer)
             {
-                List<JsonObject> results = tmp!;
-                int i = 0;
-                foreach (OBSRequest request in m_Requests)
-                {
-                    if (i == results.Count)
-                        request.SetResponse();
-                    else
-                    {
-                        request.ReceivedResponse(results[i]);
-                        ++i;
-                    }
-                }
-                MarkAsResponded();
+                writer["requestId"] = obj.m_ID;
+                writer["haltOnFailure"] = obj.m_HaltOnFailure;
+                writer["executionType"] = obj.m_ExecutionType;
+                writer["requests"] = obj.m_Requests;
             }
         }
 
-        protected override void FillJson(ref JsonObject request)
+        private readonly List<AOBSRequest> m_Requests = [];
+        private readonly Guid m_ID = Guid.NewGuid();
+        private readonly RequestBatchExecutionType m_ExecutionType = RequestBatchExecutionType.SerialRealtime;
+        private readonly bool m_HaltOnFailure = false;
+        private volatile bool m_HasResult = false;
+
+        public string ID => m_ID.ToString();
+        public bool HasResult => m_HasResult;
+
+        public void ReceivedResponse(JsonObject response)
         {
-            JsonArray requests = [];
-            foreach (OBSRequest requestToAdd in m_Requests)
-                requests.Add(requestToAdd.ToJson());
-            request.Add("haltOnFailure", m_HaltOnFailure);
-            request.Add("executionType", m_ExecutionType);
-            request.Add("requests", requests);
+            List<JsonObject> results = response.GetList<JsonObject>("results");
+            int i = 0;
+            foreach (AOBSRequest request in m_Requests)
+            {
+                if (i == results.Count)
+                    request.SetResponse();
+                else
+                {
+                    request.ReceivedResponse(results[i]);
+                    ++i;
+                }
+            }
+            m_HasResult = true;
         }
+
+        public void AddRequest(AOBSRequest request) => m_Requests.Add(request);
+        public void AddRequests(IEnumerable<AOBSRequest> requests) => m_Requests.AddRange(requests);
     }
 }

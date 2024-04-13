@@ -7,6 +7,6 @@ namespace OBSCorpse
         private readonly string m_CurrentSceneCollection = currentSceneCollection;
         private readonly List<string> m_SceneCollectionList = sceneCollectionList;
         public string CurrentSceneCollection => m_CurrentSceneCollection;
-        public ReadOnlyCollection<string> SceneCollectionList => m_SceneCollectionList.AsReadOnly();
+        public string[] SceneCollectionList => [..m_SceneCollectionList];
     }
 }
