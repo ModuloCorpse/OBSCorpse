@@ -1,8 +1,8 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse.Requests
 {
-    public class OBSGetSceneItemEnabledRequest(OBSSource source) : AOBSRequest("GetSceneItemEnabled", new JsonObject() { { "sceneName", source.Scene }, { "sceneItemId", source.ID } })
+    public class OBSGetSceneItemEnabledRequest(OBSSource source) : AOBSRequest("GetSceneItemEnabled", new DataObject() { { "sceneName", source.Scene }, { "sceneItemId", source.ID } })
     {
         private bool m_SceneItemEnabled = false;
 

@@ -1,8 +1,8 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse.Requests
 {
-    public class OBSRemoveSceneRequest(string sceneName) : AOBSRequest("RemoveScene", new JsonObject() { { "sceneName", sceneName } })
+    public class OBSRemoveSceneRequest(string sceneName) : AOBSRequest("RemoveScene", new DataObject() { { "sceneName", sceneName } })
     {
         private bool m_Success = false;
         public bool Success => m_Success;

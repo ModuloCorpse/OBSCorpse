@@ -1,15 +1,15 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
+using CorpseLib.DataNotation;
 
 namespace OBSCorpse
 {
     public class OBSRequestBatch : IOBSRequest
     {
-        public class JsonSerializer : AJsonSerializer<OBSRequestBatch>
+        public class DataSerializer : ADataSerializer<OBSRequestBatch>
         {
-            protected override OperationResult<OBSRequestBatch> Deserialize(JsonObject reader) => new("No deserialization for OBSRequestBatch", string.Empty);
+            protected override OperationResult<OBSRequestBatch> Deserialize(DataObject reader) => new("No deserialization for OBSRequestBatch", string.Empty);
 
-            protected override void Serialize(OBSRequestBatch obj, JsonObject writer)
+            protected override void Serialize(OBSRequestBatch obj, DataObject writer)
             {
                 writer["requestId"] = obj.m_ID;
                 writer["haltOnFailure"] = obj.m_HaltOnFailure;
@@ -27,9 +27,9 @@ namespace OBSCorpse
         public string ID => m_ID.ToString();
         public bool HasResult => m_HasResult;
 
-        public void ReceivedResponse(JsonObject response)
+        public void ReceivedResponse(DataObject response)
         {
-            List<JsonObject> results = response.GetList<JsonObject>("results");
+            List<DataObject> results = response.GetList<DataObject>("results");
             int i = 0;
             foreach (AOBSRequest request in m_Requests)
             {

@@ -1,10 +1,10 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse
 {
     public interface IOBSRequest
     {
         public string ID { get; }
-        public void ReceivedResponse(JsonObject response);
+        public void ReceivedResponse(DataObject response);
     }
 }

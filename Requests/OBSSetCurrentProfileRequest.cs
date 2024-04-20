@@ -1,8 +1,8 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse.Requests
 {
-    public class OBSSetCurrentProfileRequest(string profileName) : AOBSRequest("SetCurrentProfile", new JsonObject() { { "profileName", profileName } })
+    public class OBSSetCurrentProfileRequest(string profileName) : AOBSRequest("SetCurrentProfile", new DataObject() { { "profileName", profileName } })
     {
         private bool m_Success = false;
         public bool Success => m_Success;

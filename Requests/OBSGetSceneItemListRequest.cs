@@ -1,8 +1,8 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse.Requests
 {
-    public class OBSGetSceneItemListRequest(string sceneName) : AOBSRequest("GetSceneItemList", new JsonObject() { { "sceneName", sceneName } })
+    public class OBSGetSceneItemListRequest(string sceneName) : AOBSRequest("GetSceneItemList", new DataObject() { { "sceneName", sceneName } })
     {
         private readonly List<OBSSceneItem> m_SceneItems = [];
         private readonly string m_SceneName = sceneName;
@@ -14,8 +14,8 @@ namespace OBSCorpse.Requests
             m_SceneItems.Clear();
             if (response.Result && response.Data != null)
             {
-                List<JsonObject> items = response.Data.GetList<JsonObject>("sceneItems");
-                foreach (JsonObject item in items)
+                List<DataObject> items = response.Data.GetList<DataObject>("sceneItems");
+                foreach (DataObject item in items)
                 {
                     if (item.TryGet("sourceName", out string? sourceName) &&
                         item.TryGet("sceneItemId", out int? sceneItemId) &&

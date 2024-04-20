@@ -1,8 +1,8 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse.Requests
 {
-    public class OBSSetCurrentPreviewSceneRequest(string sceneName) : AOBSRequest("SetCurrentPreviewScene", new JsonObject() { { "sceneName", sceneName } })
+    public class OBSSetCurrentPreviewSceneRequest(string sceneName) : AOBSRequest("SetCurrentPreviewScene", new DataObject() { { "sceneName", sceneName } })
     {
         private bool m_Success = false;
         public bool Success => m_Success;

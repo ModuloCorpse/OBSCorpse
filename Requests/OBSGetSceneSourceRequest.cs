@@ -1,4 +1,4 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse.Requests
 {
@@ -11,13 +11,13 @@ namespace OBSCorpse.Requests
 
         public OBSSource Source => m_Source;
 
-        public OBSGetSceneSourceRequest(string sceneName, string sourceName) : base("GetSceneItemId", new JsonObject() { { "sceneName", sceneName }, { "sourceName", sourceName } })
+        public OBSGetSceneSourceRequest(string sceneName, string sourceName) : base("GetSceneItemId", new DataObject() { { "sceneName", sceneName }, { "sourceName", sourceName } })
         {
             m_SceneName = sceneName;
             m_SourceName = sourceName;
         }
 
-        public OBSGetSceneSourceRequest(string sceneName, int sourceID) : base("GetSceneItemSource", new JsonObject() { { "sceneName", sceneName }, { "sceneItemId", sourceID } })
+        public OBSGetSceneSourceRequest(string sceneName, int sourceID) : base("GetSceneItemSource", new DataObject() { { "sceneName", sceneName }, { "sceneItemId", sourceID } })
         {
             m_SceneName = sceneName;
             m_ID = sourceID;

@@ -1,8 +1,8 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse.Requests
 {
-    public class OBSSetTextRequest(OBSSource source, string text) : AOBSRequest("SetInputSettings", new JsonObject() { { "inputName", source.Name }, { "inputSettings", new JsonObject() { { "text", text } } } })
+    public class OBSSetTextRequest(OBSSource source, string text) : AOBSRequest("SetInputSettings", new DataObject() { { "inputName", source.Name }, { "inputSettings", new DataObject() { { "text", text } } } })
     {
         private bool m_Success = false;
         public bool Success => m_Success;

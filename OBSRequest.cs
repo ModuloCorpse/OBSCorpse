@@ -1,18 +1,18 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
+using CorpseLib.DataNotation;
 
 namespace OBSCorpse
 {
-    public abstract class AOBSRequest(string type, JsonObject? data = null) : IOBSRequest
+    public abstract class AOBSRequest(string type, DataObject? data = null) : IOBSRequest
     {
         public class Response
         {
-            private readonly JsonObject? m_Data;
+            private readonly DataObject? m_Data;
             private readonly string m_Comment = string.Empty;
             private readonly RequestStatus m_Code;
             private readonly bool m_Result;
 
-            public JsonObject? Data => m_Data;
+            public DataObject? Data => m_Data;
             public string Comment => m_Comment;
             public RequestStatus Code => m_Code;
             public bool Result => m_Result;
@@ -25,7 +25,7 @@ namespace OBSCorpse
                 m_Comment = string.Empty;
             }
 
-            public Response(JsonObject status, JsonObject? data)
+            public Response(DataObject status, DataObject? data)
             {
                 m_Data = data;
                 m_Result = status.GetOrDefault("result", false);
@@ -34,11 +34,11 @@ namespace OBSCorpse
             }
         }
 
-        public class JsonSerializer : AJsonSerializer<AOBSRequest>
+        public class DataSerializer : ADataSerializer<AOBSRequest>
         {
-            protected override OperationResult<AOBSRequest> Deserialize(JsonObject reader) => new("No deserialization for AOBSRequest", string.Empty);
+            protected override OperationResult<AOBSRequest> Deserialize(DataObject reader) => new("No deserialization for AOBSRequest", string.Empty);
 
-            protected override void Serialize(AOBSRequest obj, JsonObject writer)
+            protected override void Serialize(AOBSRequest obj, DataObject writer)
             {
                 writer["requestId"] = obj.m_ID;
                 writer["requestType"] = obj.m_Type;
@@ -48,7 +48,7 @@ namespace OBSCorpse
         }
 
         private Response? m_Response = null;
-        private readonly JsonObject? m_Data = data;
+        private readonly DataObject? m_Data = data;
         private readonly Guid m_ID = Guid.NewGuid();
         private readonly string m_Type = type;
         private volatile bool m_HasResult = false;
@@ -56,12 +56,12 @@ namespace OBSCorpse
         public string ID => m_ID.ToString();
         public bool HasResult => m_HasResult;
 
-        public void ReceivedResponse(JsonObject response)
+        public void ReceivedResponse(DataObject response)
         {
             if (response.TryGet("requestType", out string? type) && m_Type == type &&
-                response.TryGet("requestStatus", out JsonObject? status))
+                response.TryGet("requestStatus", out DataObject? status))
             {
-                m_Response = new(status!, response.GetOrDefault<JsonObject?>("responseData", null));
+                m_Response = new(status!, response.GetOrDefault<DataObject?>("responseData", null));
                 OnResponse(m_Response);
                 m_HasResult = true;
             }
@@ -74,7 +74,7 @@ namespace OBSCorpse
         protected abstract void OnResponse(Response response);
     }
 
-    public class OBSRequest(string type, JsonObject? data = null) : AOBSRequest(type, data)
+    public class OBSRequest(string type, DataObject? data = null) : AOBSRequest(type, data)
     {
         protected override void OnResponse(Response response) { }
     }

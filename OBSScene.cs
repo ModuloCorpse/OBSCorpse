@@ -1,13 +1,13 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
+using CorpseLib.DataNotation;
 
 namespace OBSCorpse
 {
     public class OBSScene(string name, int idx)
     {
-        public class JsonSerializer : AJsonSerializer<OBSScene>
+        public class DataSerializer : ADataSerializer<OBSScene>
         {
-            protected override OperationResult<OBSScene> Deserialize(JsonObject reader)
+            protected override OperationResult<OBSScene> Deserialize(DataObject reader)
             {
                 if (reader.TryGet("sceneName", out string? sceneName) &&
                     reader.TryGet("sceneIndex", out int? sceneIndex))
@@ -15,7 +15,7 @@ namespace OBSCorpse
                 return new("Deserialization error", "Missing scene name or index");
             }
 
-            protected override void Serialize(OBSScene obj, JsonObject writer)
+            protected override void Serialize(OBSScene obj, DataObject writer)
             {
                 writer["sceneName"] = obj.m_Name;
                 writer["sceneIndex"] = obj.m_Idx;

@@ -1,8 +1,8 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace OBSCorpse.Requests
 {
-    public class OBSSendStreamCaptionRequest(string captionText) : AOBSRequest("SendStreamCaption", new JsonObject() { { "captionText", captionText } })
+    public class OBSSendStreamCaptionRequest(string captionText) : AOBSRequest("SendStreamCaption", new DataObject() { { "captionText", captionText } })
     {
         private bool m_Success = false;
         public bool Success => m_Success;

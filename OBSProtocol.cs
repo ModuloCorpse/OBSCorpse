@@ -1,4 +1,5 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
+using CorpseLib.Json;
 using CorpseLib.Logging;
 using CorpseLib.Network;
 using CorpseLib.Web;
@@ -18,9 +19,9 @@ namespace OBSCorpse
 
         static OBSProtocol()
         {
-            JsonHelper.RegisterSerializer(new OBSScene.JsonSerializer());
-            JsonHelper.RegisterSerializer(new AOBSRequest.JsonSerializer());
-            JsonHelper.RegisterSerializer(new OBSRequestBatch.JsonSerializer());
+            DataHelper.RegisterSerializer(new OBSScene.DataSerializer());
+            DataHelper.RegisterSerializer(new AOBSRequest.DataSerializer());
+            DataHelper.RegisterSerializer(new OBSRequestBatch.DataSerializer());
         }
 
         private static OBSProtocol? CreateNewConnection(string password, URI url, IOBSHandler? handler)
@@ -63,9 +64,9 @@ namespace OBSCorpse
         {
             try
             {
-                JsonObject messageJson = JsonParser.Parse(message);
+                DataObject messageJson = JsonParser.Parse(message);
                 if (messageJson.TryGet("op", out WebSocketOpCode? op) &&
-                    messageJson.TryGet("d", out JsonObject? data) && data != null)
+                    messageJson.TryGet("d", out DataObject? data) && data != null)
                 {
                     switch (op)
                     {
@@ -81,21 +82,21 @@ namespace OBSCorpse
             catch (Exception ex) { OBS_LOG.Log(ex.ToString()); }
         }
 
-        private void SetRequestResponse(JsonObject requestResponse)
+        private void SetRequestResponse(DataObject requestResponse)
         {
             if (requestResponse.TryGet("requestId", out string? id) &&
                 m_PendingRequests.TryRemove(id!, out IOBSRequest? request))
                 request.ReceivedResponse(requestResponse);
         }
 
-        private void HandleHello(JsonObject data)
+        private void HandleHello(DataObject data)
         {
             if (data.TryGet("rpcVersion", out int? rpc) &&
                 data.TryGet("obsWebSocketVersion", out string? websocketVersion) &&
                 new Version(websocketVersion!) >= MINIMUM_REQUIRED)
             {
-                JsonObject response = new() { { "rpcVersion", rpc! } };
-                if (data.TryGet("authentication", out JsonObject? authentication) &&
+                DataObject response = new() { { "rpcVersion", rpc! } };
+                if (data.TryGet("authentication", out DataObject? authentication) &&
                     authentication!.TryGet("challenge", out string? challenge) &&
                     authentication!.TryGet("salt", out string? salt))
                 {
@@ -103,15 +104,15 @@ namespace OBSCorpse
                     string auth = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(base64_secret + challenge)));
                     response.Add("authentification", auth);
                 }
-                Send(new JsonObject() { { "op", WebSocketOpCode.Identify }, { "d", response } }.ToNetworkString());
+                Send(JsonParser.NetStr(new DataObject() { { "op", WebSocketOpCode.Identify }, { "d", response } }));
             }
         }
 
-        private void HandleEvent(JsonObject data)
+        private void HandleEvent(DataObject data)
         {
             if (data.TryGet("eventType", out string? eventType))
             {
-                JsonObject eventData = data.GetOrDefault("eventData", new JsonObject())!;
+                DataObject eventData = data.GetOrDefault("eventData", new DataObject())!;
                 switch (eventType)
                 {
                     case "CurrentProgramSceneChanged": HandleSceneChange(eventData); break;
@@ -121,19 +122,19 @@ namespace OBSCorpse
             }
         }
 
-        private void HandleSceneChange(JsonObject data)
+        private void HandleSceneChange(DataObject data)
         {
             if (data.TryGet("sceneName", out string? sceneName))
                 m_Handler?.OnSceneChanged(sceneName!);
         }
 
-        private void HandleStreamStateChanged(JsonObject data)
+        private void HandleStreamStateChanged(DataObject data)
         {
             if (data.TryGet("outputActive", out bool? outputActive) && data.TryGet("outputState", out string? outputState))
                 m_Handler?.OnStreamStatusChanged((bool)outputActive!, outputState!);
         }
 
-        private void HandleSceneItemEnableStateChanged(JsonObject data)
+        private void HandleSceneItemEnableStateChanged(DataObject data)
         {
             if (data.TryGet("sceneItemEnabled", out bool? sceneItemEnabled) &&
                 data.TryGet("sceneName", out string? sceneName) &&
@@ -145,7 +146,7 @@ namespace OBSCorpse
         {
             if (m_PendingRequests.TryAdd(request.ID, request))
             {
-                Send(new JsonObject() { { "op", WebSocketOpCode.Request }, { "d", request } }.ToNetworkString());
+                Send(JsonParser.NetStr(new DataObject() { { "op", WebSocketOpCode.Request }, { "d", request } }));
                 while (!request.HasResult && IsConnected())
                     Thread.Sleep(10);
             }
@@ -157,7 +158,7 @@ namespace OBSCorpse
             requestBatch.AddRequests(requests);
             if (m_PendingRequests.TryAdd(requestBatch.ID, requestBatch))
             {
-                Send(new JsonObject() { { "op", WebSocketOpCode.RequestBatch }, { "d", requestBatch } }.ToNetworkString());
+                Send(JsonParser.NetStr(new DataObject() { { "op", WebSocketOpCode.RequestBatch }, { "d", requestBatch } }));
                 while (!requestBatch.HasResult && IsConnected())
                     Thread.Sleep(10);
             }
