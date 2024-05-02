@@ -117,6 +117,7 @@ namespace OBSCorpse
                 {
                     case "CurrentProgramSceneChanged": HandleSceneChange(eventData); break;
                     case "StreamStateChanged": HandleStreamStateChanged(eventData); break;
+                    case "RecordStateChanged": HandleRecordStateChanged(eventData); break;
                     case "SceneItemEnableStateChanged": HandleSceneItemEnableStateChanged(eventData); break;
                 }
             }
@@ -132,6 +133,14 @@ namespace OBSCorpse
         {
             if (data.TryGet("outputActive", out bool? outputActive) && data.TryGet("outputState", out string? outputState))
                 m_Handler?.OnStreamStatusChanged((bool)outputActive!, outputState!);
+        }
+
+        private void HandleRecordStateChanged(DataObject data)
+        {
+            if (data.TryGet("outputActive", out bool? outputActive) &&
+                data.TryGet("outputState", out string? outputState) &&
+                data.TryGet("outputPath", out string? outputPath))
+                m_Handler?.OnRecordStatusChanged((bool)outputActive!, outputState!, outputPath ?? string.Empty);
         }
 
         private void HandleSceneItemEnableStateChanged(DataObject data)
