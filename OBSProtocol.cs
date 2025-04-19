@@ -3,6 +3,7 @@ using CorpseLib.Json;
 using CorpseLib.Logging;
 using CorpseLib.Network;
 using CorpseLib.Web;
+using CorpseLib.Web.Http;
 using System.Collections.Concurrent;
 using System.Text;
 using Version = CorpseLib.Version;
@@ -65,6 +66,7 @@ namespace OBSCorpse
             try
             {
                 DataObject messageJson = JsonParser.Parse(message);
+                OBS_LOG.Log(string.Format("Received: {0}", JsonParser.Str(messageJson)));
                 if (messageJson.TryGet("op", out WebSocketOpCode? op) &&
                     messageJson.TryGet("d", out DataObject? data) && data != null)
                 {
@@ -104,7 +106,9 @@ namespace OBSCorpse
                     string auth = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(base64_secret + challenge)));
                     response.Add("authentification", auth);
                 }
-                Send(JsonParser.NetStr(new DataObject() { { "op", WebSocketOpCode.Identify }, { "d", response } }));
+                DataObject identifyData = new() { { "op", WebSocketOpCode.Identify }, { "d", response } };
+                OBS_LOG.Log(string.Format("Sending: {0}", JsonParser.Str(identifyData)));
+                Send(JsonParser.NetStr(identifyData));
             }
         }
 
@@ -155,7 +159,9 @@ namespace OBSCorpse
         {
             if (m_PendingRequests.TryAdd(request.ID, request))
             {
-                Send(JsonParser.NetStr(new DataObject() { { "op", WebSocketOpCode.Request }, { "d", request } }));
+                DataObject requestData = new() { { "op", WebSocketOpCode.Request }, { "d", request } };
+                OBS_LOG.Log(string.Format("Sending: {0}", JsonParser.Str(requestData)));
+                Send(JsonParser.NetStr(requestData));
                 while (!request.HasResult && IsConnected())
                     Thread.Sleep(10);
             }
@@ -167,7 +173,9 @@ namespace OBSCorpse
             requestBatch.AddRequests(requests);
             if (m_PendingRequests.TryAdd(requestBatch.ID, requestBatch))
             {
-                Send(JsonParser.NetStr(new DataObject() { { "op", WebSocketOpCode.RequestBatch }, { "d", requestBatch } }));
+                DataObject requestBatchData = new() { { "op", WebSocketOpCode.RequestBatch }, { "d", requestBatch } };
+                OBS_LOG.Log(string.Format("Sending: {0}", JsonParser.Str(requestBatchData)));
+                Send(JsonParser.NetStr(requestBatchData));
                 while (!requestBatch.HasResult && IsConnected())
                     Thread.Sleep(10);
             }
