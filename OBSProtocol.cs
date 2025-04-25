@@ -66,7 +66,7 @@ namespace OBSCorpse
             try
             {
                 DataObject messageJson = JsonParser.Parse(message);
-                OBS_LOG.Log(string.Format("Received: {0}", JsonParser.Str(messageJson)));
+                OBS_LOG.Log("Received: ${0}", JsonParser.Str(messageJson));
                 if (messageJson.TryGet("op", out WebSocketOpCode? op) &&
                     messageJson.TryGet("d", out DataObject? data) && data != null)
                 {
@@ -77,7 +77,7 @@ namespace OBSCorpse
                         case WebSocketOpCode.Event: HandleEvent(data); break;
                         case WebSocketOpCode.RequestResponse: SetRequestResponse(data); break;
                         case WebSocketOpCode.RequestBatchResponse: SetRequestResponse(data); break;
-                        default: OBS_LOG.Log(string.Format("[{0}] {1}", op, data)); break;
+                        default: OBS_LOG.Log("[${0}] ${1}", op, data); break;
                     }
                 }
             }
@@ -107,7 +107,7 @@ namespace OBSCorpse
                     response.Add("authentification", auth);
                 }
                 DataObject identifyData = new() { { "op", WebSocketOpCode.Identify }, { "d", response } };
-                OBS_LOG.Log(string.Format("Sending: {0}", JsonParser.Str(identifyData)));
+                OBS_LOG.Log("Sending: ${0}", JsonParser.Str(identifyData));
                 Send(JsonParser.NetStr(identifyData));
             }
         }
@@ -160,7 +160,7 @@ namespace OBSCorpse
             if (m_PendingRequests.TryAdd(request.ID, request))
             {
                 DataObject requestData = new() { { "op", WebSocketOpCode.Request }, { "d", request } };
-                OBS_LOG.Log(string.Format("Sending: {0}", JsonParser.Str(requestData)));
+                OBS_LOG.Log("Sending: ${0}", JsonParser.Str(requestData));
                 Send(JsonParser.NetStr(requestData));
                 while (!request.HasResult && IsConnected())
                     Thread.Sleep(10);
@@ -174,7 +174,7 @@ namespace OBSCorpse
             if (m_PendingRequests.TryAdd(requestBatch.ID, requestBatch))
             {
                 DataObject requestBatchData = new() { { "op", WebSocketOpCode.RequestBatch }, { "d", requestBatch } };
-                OBS_LOG.Log(string.Format("Sending: {0}", JsonParser.Str(requestBatchData)));
+                OBS_LOG.Log("Sending: ${0}", JsonParser.Str(requestBatchData));
                 Send(JsonParser.NetStr(requestBatchData));
                 while (!requestBatch.HasResult && IsConnected())
                     Thread.Sleep(10);
