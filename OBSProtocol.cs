@@ -77,7 +77,7 @@ namespace OBSCorpse
                         case WebSocketOpCode.Event: HandleEvent(data); break;
                         case WebSocketOpCode.RequestResponse: SetRequestResponse(data); break;
                         case WebSocketOpCode.RequestBatchResponse: SetRequestResponse(data); break;
-                        default: OBS_LOG.Log("[${0}] ${1}", op, data); break;
+                        default: OBS_LOG.Log("[${0}] ${1}", op!, data); break;
                     }
                 }
             }
