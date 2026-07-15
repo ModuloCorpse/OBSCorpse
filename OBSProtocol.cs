@@ -1,20 +1,19 @@
-﻿using CorpseLib.DataNotation;
+﻿using CorpseLib;
+using CorpseLib.DataNotation;
 using CorpseLib.Json;
 using CorpseLib.Logging;
-using CorpseLib.Network;
-using CorpseLib.Web;
-using CorpseLib.Web.Http;
+using CorpseLib.Network.WebSocket;
 using System.Collections.Concurrent;
 using System.Text;
 using Version = CorpseLib.Version;
 
 namespace OBSCorpse
 {
-    public class OBSProtocol : WebSocketProtocol
+    public class OBSProtocol : AWebSocketProtocol
     {
         private static readonly Version MINIMUM_REQUIRED = new(5, 1, 0);
 
-        public static readonly Logger OBS_LOG = new("[${d}-${M}-${y} ${h}:${m}:${s}.${ms}] ${log}") { new LogInFile("./log/${y}${M}${d}${h}-OBS.log") };
+        public static readonly Logger OBS_LOG = new("[${d}-${M}-${y} ${h}:${m}:${s}.${ms}] ${log}");
         public static void StartLogging() => OBS_LOG.Start();
         public static void StopLogging() => OBS_LOG.Stop();
 
@@ -25,23 +24,29 @@ namespace OBSCorpse
             DataHelper.RegisterSerializer(new OBSRequestBatch.DataSerializer());
         }
 
-        private static OBSProtocol? CreateNewConnection(string password, URI url, IOBSHandler? handler)
+        private static OBSProtocol? CreateNewConnection(string password, URI uri, IOBSHandler? handler)
         {
-            OBSProtocol protocol = new(password, handler);
-            TCPAsyncClient obsClient = new(protocol, url);
-            if (obsClient.Start())
-            {
-                while (!protocol.Identified && protocol.IsConnected())
-                    Thread.Sleep(100);
-                return (protocol.Identified) ? protocol : null;
-            }
-            return null;
+            OBSProtocol obsClient = new(password, handler);
+            WebSocketClient? webSocket = WebSocketClient.Connect(uri, obsClient);
+            if (webSocket == null)
+                return null;
+            while (!obsClient.Identified && obsClient.IsConnected())
+                Thread.Sleep(100);
+            return (obsClient.Identified) ? obsClient : null;
         }
 
-        public static OBSProtocol? NewConnection(string password, URI url, IOBSHandler handler) => CreateNewConnection(password, url, handler);
-        public static OBSProtocol? NewConnection(string password, URI url) => CreateNewConnection(password, url, null);
-        public static OBSProtocol? NewConnection(URI url, IOBSHandler handler) => CreateNewConnection(string.Empty, url, handler);
-        public static OBSProtocol? NewConnection(URI url) => CreateNewConnection(string.Empty, url, null);
+        public static OBSProtocol? NewConnection(URI url, string password, IOBSHandler handler) => CreateNewConnection(password, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), handler);
+        public static OBSProtocol? NewConnection(URI url, string password) => CreateNewConnection(password, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), null);
+        public static OBSProtocol? NewConnection(URI url, IOBSHandler handler) => CreateNewConnection(string.Empty, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), handler);
+        public static OBSProtocol? NewConnection(URI url) => CreateNewConnection(string.Empty, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), null);
+        public static OBSProtocol? NewConnection(string host, int port, string password, IOBSHandler handler) => CreateNewConnection(password, URI.Build("ws").Host(host).Port(port).Build(), handler);
+        public static OBSProtocol? NewConnection(string host, int port, string password) => CreateNewConnection(password, URI.Build("ws").Host(host).Port(port).Build(), null);
+        public static OBSProtocol? NewConnection(string host, int port, IOBSHandler handler) => CreateNewConnection(string.Empty, URI.Build("ws").Host(host).Port(port).Build(), handler);
+        public static OBSProtocol? NewConnection(string host, int port) => CreateNewConnection(string.Empty, URI.Build("ws").Host(host).Port(port).Build(), null);
+        public static OBSProtocol? NewConnection(string password, IOBSHandler handler) => CreateNewConnection(password, URI.Build("ws").Host("localhost").Port(4455).Build(), handler);
+        public static OBSProtocol? NewConnection(string password) => CreateNewConnection(password, URI.Build("ws").Host("localhost").Port(4455).Build(), null);
+        public static OBSProtocol? NewConnection(IOBSHandler handler) => CreateNewConnection(string.Empty, URI.Build("ws").Host("localhost").Port(4455).Build(), handler);
+        public static OBSProtocol? NewConnection() => CreateNewConnection(string.Empty, URI.Build("ws").Host("localhost").Port(4455).Build(), null);
 
         private readonly IOBSHandler? m_Handler = null;
         private readonly ConcurrentDictionary<string, IOBSRequest> m_PendingRequests = [];
@@ -56,12 +61,13 @@ namespace OBSCorpse
             m_Handler = handler;
         }
 
-        protected override void OnClientDisconnected()
-        {
-            m_Handler?.OnDisconnect();
-        }
+        public override void OnOpen() { }
 
-        protected override void OnWSMessage(string message)
+        public override void OnClose(int status, string message) => m_Handler?.OnDisconnect();
+
+        public override void OnError(Exception ex) => OBS_LOG.Log(ex.ToString());
+
+        public override void HandleMessage(string message)
         {
             try
             {
@@ -167,10 +173,8 @@ namespace OBSCorpse
             }
         }
 
-        public void Send(IEnumerable<AOBSRequest> requests)
+        public void Send(OBSRequestBatch requestBatch)
         {
-            OBSRequestBatch requestBatch = new();
-            requestBatch.AddRequests(requests);
             if (m_PendingRequests.TryAdd(requestBatch.ID, requestBatch))
             {
                 DataObject requestBatchData = new() { { "op", WebSocketOpCode.RequestBatch }, { "d", requestBatch } };
@@ -179,6 +183,13 @@ namespace OBSCorpse
                 while (!requestBatch.HasResult && IsConnected())
                     Thread.Sleep(10);
             }
+        }
+
+        public void Send(IEnumerable<AOBSRequest> requests)
+        {
+            OBSRequestBatch requestBatch = new();
+            requestBatch.AddRequests(requests);
+            Send(requestBatch);
         }
     }
 }
