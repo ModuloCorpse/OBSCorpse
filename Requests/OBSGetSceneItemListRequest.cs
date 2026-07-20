@@ -9,7 +9,7 @@ namespace OBSCorpse.Requests
 
         public OBSSceneItem[] SceneItems => [.. m_SceneItems];
 
-        protected override void OnResponse(Response response)
+        protected override async Task OnResponse(Response response)
         {
             m_SceneItems.Clear();
             if (response.Result && response.Data != null)

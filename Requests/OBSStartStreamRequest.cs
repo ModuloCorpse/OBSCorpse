@@ -4,6 +4,6 @@
     {
         private bool m_Success = false;
         public bool Success => m_Success;
-        protected override void OnResponse(Response response) => m_Success = response.Result;
+        protected override async Task OnResponse(Response response) => m_Success = response.Result;
     }
 }

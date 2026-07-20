@@ -6,7 +6,7 @@
 
         public OBSSceneCollectionList SceneCollectionList => m_SceneCollectionList!;
 
-        protected override void OnResponse(Response response)
+        protected override async Task OnResponse(Response response)
         {
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("currentSceneCollectionName", out string? currentSceneCollectionName))

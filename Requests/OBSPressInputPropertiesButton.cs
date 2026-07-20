@@ -18,6 +18,6 @@ namespace OBSCorpse.Requests
             _ => throw new ArgumentOutOfRangeException(nameof(properties), properties, null)
         };
 
-        protected override void OnResponse(Response response) => m_Success = response.Result;
+        protected override async Task OnResponse(Response response) => m_Success = response.Result;
     }
 }

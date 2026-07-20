@@ -8,7 +8,7 @@ namespace OBSCorpse.Requests
 
         public bool SceneItemEnabled => m_SceneItemEnabled;
 
-        protected override void OnResponse(Response response)
+        protected override async Task OnResponse(Response response)
         {
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("sceneItemEnabled", out bool? sceneItemEnabled))

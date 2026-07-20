@@ -5,6 +5,6 @@ namespace OBSCorpse
     public interface IOBSRequest
     {
         public string ID { get; }
-        public void ReceivedResponse(DataObject response);
+        public Task ReceivedResponse(DataObject response);
     }
 }

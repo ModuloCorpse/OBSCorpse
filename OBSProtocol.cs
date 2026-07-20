@@ -24,29 +24,29 @@ namespace OBSCorpse
             DataHelper.RegisterSerializer(new OBSRequestBatch.DataSerializer());
         }
 
-        private static OBSProtocol? CreateNewConnection(string password, URI uri, IOBSHandler? handler)
+        private static async Task<OBSProtocol?> CreateNewConnection(string password, URI uri, IOBSHandler? handler)
         {
             OBSProtocol obsClient = new(password, handler);
-            WebSocketClient? webSocket = WebSocketClient.Connect(uri, obsClient);
+            WebSocketClient? webSocket = await WebSocketClient.Connect(uri, obsClient);
             if (webSocket == null)
                 return null;
             while (!obsClient.Identified && obsClient.IsConnected())
-                Thread.Sleep(100);
+                await Task.Delay(100);
             return (obsClient.Identified) ? obsClient : null;
         }
 
-        public static OBSProtocol? NewConnection(URI url, string password, IOBSHandler handler) => CreateNewConnection(password, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), handler);
-        public static OBSProtocol? NewConnection(URI url, string password) => CreateNewConnection(password, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), null);
-        public static OBSProtocol? NewConnection(URI url, IOBSHandler handler) => CreateNewConnection(string.Empty, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), handler);
-        public static OBSProtocol? NewConnection(URI url) => CreateNewConnection(string.Empty, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), null);
-        public static OBSProtocol? NewConnection(string host, int port, string password, IOBSHandler handler) => CreateNewConnection(password, URI.Build("ws").Host(host).Port(port).Build(), handler);
-        public static OBSProtocol? NewConnection(string host, int port, string password) => CreateNewConnection(password, URI.Build("ws").Host(host).Port(port).Build(), null);
-        public static OBSProtocol? NewConnection(string host, int port, IOBSHandler handler) => CreateNewConnection(string.Empty, URI.Build("ws").Host(host).Port(port).Build(), handler);
-        public static OBSProtocol? NewConnection(string host, int port) => CreateNewConnection(string.Empty, URI.Build("ws").Host(host).Port(port).Build(), null);
-        public static OBSProtocol? NewConnection(string password, IOBSHandler handler) => CreateNewConnection(password, URI.Build("ws").Host("localhost").Port(4455).Build(), handler);
-        public static OBSProtocol? NewConnection(string password) => CreateNewConnection(password, URI.Build("ws").Host("localhost").Port(4455).Build(), null);
-        public static OBSProtocol? NewConnection(IOBSHandler handler) => CreateNewConnection(string.Empty, URI.Build("ws").Host("localhost").Port(4455).Build(), handler);
-        public static OBSProtocol? NewConnection() => CreateNewConnection(string.Empty, URI.Build("ws").Host("localhost").Port(4455).Build(), null);
+        public static async Task<OBSProtocol?> NewConnection(URI url, string password, IOBSHandler handler) => await CreateNewConnection(password, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), handler);
+        public static async Task<OBSProtocol?> NewConnection(URI url, string password) => await CreateNewConnection(password, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), null);
+        public static async Task<OBSProtocol?> NewConnection(URI url, IOBSHandler handler) => await CreateNewConnection(string.Empty, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), handler);
+        public static async Task<OBSProtocol?> NewConnection(URI url) => await CreateNewConnection(string.Empty, URI.Build("ws").Host(url.Host).Port(url.Port).Path(url.Path).Build(), null);
+        public static async Task<OBSProtocol?> NewConnection(string host, int port, string password, IOBSHandler handler) => await CreateNewConnection(password, URI.Build("ws").Host(host).Port(port).Build(), handler);
+        public static async Task<OBSProtocol?> NewConnection(string host, int port, string password) => await CreateNewConnection(password, URI.Build("ws").Host(host).Port(port).Build(), null);
+        public static async Task<OBSProtocol?> NewConnection(string host, int port, IOBSHandler handler) => await CreateNewConnection(string.Empty, URI.Build("ws").Host(host).Port(port).Build(), handler);
+        public static async Task<OBSProtocol?> NewConnection(string host, int port) => await CreateNewConnection(string.Empty, URI.Build("ws").Host(host).Port(port).Build(), null);
+        public static async Task<OBSProtocol?> NewConnection(string password, IOBSHandler handler) => await CreateNewConnection(password, URI.Build("ws").Host("localhost").Port(4455).Build(), handler);
+        public static async Task<OBSProtocol?> NewConnection(string password) => await CreateNewConnection(password, URI.Build("ws").Host("localhost").Port(4455).Build(), null);
+        public static async Task<OBSProtocol?> NewConnection(IOBSHandler handler) => await CreateNewConnection(string.Empty, URI.Build("ws").Host("localhost").Port(4455).Build(), handler);
+        public static async Task<OBSProtocol?> NewConnection() => await CreateNewConnection(string.Empty, URI.Build("ws").Host("localhost").Port(4455).Build(), null);
 
         private readonly IOBSHandler? m_Handler = null;
         private readonly ConcurrentDictionary<string, IOBSRequest> m_PendingRequests = [];
@@ -61,43 +61,39 @@ namespace OBSCorpse
             m_Handler = handler;
         }
 
-        public override void OnOpen() { }
+        public override async Task OnOpen() { }
 
-        public override void OnClose(int status, string message) => m_Handler?.OnDisconnect();
+        public override async Task OnClose(int status, string message) => m_Handler?.OnDisconnect();
 
-        public override void OnError(Exception ex) => OBS_LOG.Log(ex.ToString());
+        public override async Task OnError(Exception ex) => OBS_LOG.Log(ex.ToString());
 
-        public override void HandleMessage(string message)
+        public override async Task OnMessageReceived(string message)
         {
-            try
+            DataObject messageJson = JsonParser.Parse(message);
+            OBS_LOG.Log("Received: ${0}", JsonParser.Str(messageJson));
+            if (messageJson.TryGet("op", out WebSocketOpCode? op) &&
+                messageJson.TryGet("d", out DataObject? data) && data != null)
             {
-                DataObject messageJson = JsonParser.Parse(message);
-                OBS_LOG.Log("Received: ${0}", JsonParser.Str(messageJson));
-                if (messageJson.TryGet("op", out WebSocketOpCode? op) &&
-                    messageJson.TryGet("d", out DataObject? data) && data != null)
+                switch (op)
                 {
-                    switch (op)
-                    {
-                        case WebSocketOpCode.Hello: HandleHello(data); break;
-                        case WebSocketOpCode.Identified: m_Identified = true; break;
-                        case WebSocketOpCode.Event: HandleEvent(data); break;
-                        case WebSocketOpCode.RequestResponse: SetRequestResponse(data); break;
-                        case WebSocketOpCode.RequestBatchResponse: SetRequestResponse(data); break;
-                        default: OBS_LOG.Log("[${0}] ${1}", op!, data); break;
-                    }
+                    case WebSocketOpCode.Hello: await HandleHello(data); break;
+                    case WebSocketOpCode.Identified: m_Identified = true; break;
+                    case WebSocketOpCode.Event: HandleEvent(data); break;
+                    case WebSocketOpCode.RequestResponse: await SetRequestResponse(data); break;
+                    case WebSocketOpCode.RequestBatchResponse: await SetRequestResponse(data); break;
+                    default: OBS_LOG.Log("[${0}] ${1}", op!, data); break;
                 }
             }
-            catch (Exception ex) { OBS_LOG.Log(ex.ToString()); }
         }
 
-        private void SetRequestResponse(DataObject requestResponse)
+        private async Task SetRequestResponse(DataObject requestResponse)
         {
             if (requestResponse.TryGet("requestId", out string? id) &&
                 m_PendingRequests.TryRemove(id!, out IOBSRequest? request))
-                request.ReceivedResponse(requestResponse);
+                await request.ReceivedResponse(requestResponse);
         }
 
-        private void HandleHello(DataObject data)
+        private async Task HandleHello(DataObject data)
         {
             if (data.TryGet("rpcVersion", out int? rpc) &&
                 data.TryGet("obsWebSocketVersion", out string? websocketVersion) &&
@@ -114,7 +110,7 @@ namespace OBSCorpse
                 }
                 DataObject identifyData = new() { { "op", WebSocketOpCode.Identify }, { "d", response } };
                 OBS_LOG.Log("Sending: ${0}", JsonParser.Str(identifyData));
-                Send(JsonParser.NetStr(identifyData));
+                await Send(JsonParser.NetStr(identifyData));
             }
         }
 
@@ -161,35 +157,35 @@ namespace OBSCorpse
                 m_Handler?.OnSceneItemEnableStateChanged(sceneName!, (int)sceneItemId!, (bool)sceneItemEnabled!);
         }
 
-        public void Send(AOBSRequest request)
+        public async Task Send(AOBSRequest request)
         {
             if (m_PendingRequests.TryAdd(request.ID, request))
             {
                 DataObject requestData = new() { { "op", WebSocketOpCode.Request }, { "d", request } };
                 OBS_LOG.Log("Sending: ${0}", JsonParser.Str(requestData));
-                Send(JsonParser.NetStr(requestData));
+                await Send(JsonParser.NetStr(requestData));
                 while (!request.HasResult && IsConnected())
                     Thread.Sleep(10);
             }
         }
 
-        public void Send(OBSRequestBatch requestBatch)
+        public async Task Send(OBSRequestBatch requestBatch)
         {
             if (m_PendingRequests.TryAdd(requestBatch.ID, requestBatch))
             {
                 DataObject requestBatchData = new() { { "op", WebSocketOpCode.RequestBatch }, { "d", requestBatch } };
                 OBS_LOG.Log("Sending: ${0}", JsonParser.Str(requestBatchData));
-                Send(JsonParser.NetStr(requestBatchData));
+                await Send(JsonParser.NetStr(requestBatchData));
                 while (!requestBatch.HasResult && IsConnected())
                     Thread.Sleep(10);
             }
         }
 
-        public void Send(IEnumerable<AOBSRequest> requests)
+        public async Task Send(IEnumerable<AOBSRequest> requests)
         {
             OBSRequestBatch requestBatch = new();
             requestBatch.AddRequests(requests);
-            Send(requestBatch);
+            await Send(requestBatch);
         }
     }
 }

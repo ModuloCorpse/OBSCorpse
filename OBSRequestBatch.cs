@@ -27,7 +27,7 @@ namespace OBSCorpse
         public string ID => m_ID.ToString();
         public bool HasResult => m_HasResult;
 
-        public void ReceivedResponse(DataObject response)
+        public async Task ReceivedResponse(DataObject response)
         {
             List<DataObject> results = response.GetList<DataObject>("results");
             int i = 0;
@@ -37,7 +37,7 @@ namespace OBSCorpse
                     request.SetResponse();
                 else
                 {
-                    request.ReceivedResponse(results[i]);
+                    await request.ReceivedResponse(results[i]);
                     ++i;
                 }
             }

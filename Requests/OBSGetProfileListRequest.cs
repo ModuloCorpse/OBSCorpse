@@ -8,7 +8,7 @@
         public string CurrentProfile => m_CurrentProfile;
         public string[] ProfilesList => m_ProfilesList;
 
-        protected override void OnResponse(Response response)
+        protected override async Task OnResponse(Response response)
         {
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("currentProfileName", out string? currentProfileName))

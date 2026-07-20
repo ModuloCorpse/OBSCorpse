@@ -56,26 +56,24 @@ namespace OBSCorpse
         public string ID => m_ID.ToString();
         public bool HasResult => m_HasResult;
 
-        public void ReceivedResponse(DataObject response)
+        public async Task ReceivedResponse(DataObject response)
         {
             if (response.TryGet("requestType", out string? type) && m_Type == type &&
                 response.TryGet("requestStatus", out DataObject? status))
             {
                 m_Response = new(status!, response.GetOrDefault<DataObject?>("responseData", null));
-                OnResponse(m_Response);
+                await OnResponse(m_Response);
                 m_HasResult = true;
             }
         }
 
-        public Response GetResponse() => m_Response ?? new();
-
         public void SetResponse() => m_Response = new();
 
-        protected abstract void OnResponse(Response response);
+        protected abstract Task OnResponse(Response response);
     }
 
     public class OBSRequest(string type, DataObject? data = null) : AOBSRequest(type, data)
     {
-        protected override void OnResponse(Response response) { }
+        protected override async Task OnResponse(Response response) { }
     }
 }

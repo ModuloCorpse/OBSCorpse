@@ -6,7 +6,7 @@
 
         public string CurrentProgramScene => m_CurrentProgramScene;
 
-        protected override void OnResponse(Response response)
+        protected override async Task OnResponse(Response response)
         {
             if (response.Result && response.Data != null &&
                 response.Data.TryGet("currentProgramSceneName", out string? currentProgramSceneName))

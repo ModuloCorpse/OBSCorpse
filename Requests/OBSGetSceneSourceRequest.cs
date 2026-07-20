@@ -23,7 +23,7 @@ namespace OBSCorpse.Requests
             m_ID = sourceID;
         }
 
-        protected override void OnResponse(Response response)
+        protected override async Task OnResponse(Response response)
         {
             if (response.Result && response.Data != null)
             {

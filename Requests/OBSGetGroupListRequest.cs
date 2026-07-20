@@ -6,7 +6,7 @@
 
         public List<string> GroupList => m_GroupList!;
 
-        protected override void OnResponse(Response response)
+        protected override async Task OnResponse(Response response)
         {
             if (response.Result && response.Data != null)
                 m_GroupList = response.Data.GetList<string>("groups");
